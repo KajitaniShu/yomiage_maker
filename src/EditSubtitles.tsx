@@ -1,3 +1,8 @@
+import { Group, TextInput, Box, Text, Code, Button, Center } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { IconGripVertical } from '@tabler/icons';
+
 export function EditSubtitles() {
   const form = useForm({
     initialValues: {
@@ -12,20 +17,13 @@ export function EditSubtitles() {
   });
 
   const fields = form.values.employees.map((_, index) => (
-    <Draggable key={index} index={index} draggableId={index.toString()}>
-      {(provided: any) => (
-        <Group ref={provided.innerRef} mt="xs" {...provided.draggableProps}>
-          <Center {...provided.dragHandleProps}>
-            <IconGripVertical size={18} />
-          </Center>
+        <Group>
           <TextInput placeholder="John Doe" {...form.getInputProps(`employees.${index}.name`)} />
           <TextInput
             placeholder="example@mail.com"
             {...form.getInputProps(`employees.${index}.email`)}
           />
         </Group>
-      )}
-    </Draggable>
   ));
 
   return (
@@ -44,13 +42,13 @@ export function EditSubtitles() {
           )}
         </Droppable>
       </DragDropContext>
-      
 
       <Group position="center" mt="md">
         <Button onClick={() => form.insertListItem('employees', { name: '', email: '' })}>
           Add employee
         </Button>
       </Group>
+      
 
       <Text size="sm" weight={500} mt="md">
         Form values:
