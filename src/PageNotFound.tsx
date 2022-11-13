@@ -53,7 +53,7 @@ export function PageNotFound() {
             ホームに戻る
           </Button>
         </div>
-        <Image src={'./pagenotfound.png'} className={classes.desktopImage} />
+        <Image src={'./pagenotfound.png'} height={200} withPlaceholder className={classes.desktopImage} />
       </SimpleGrid>
     </Container>
   );

@@ -30,21 +30,23 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
-async function sleep(sec: number) {
-  return new Promise(resolve => setTimeout(resolve, sec*1000));
-}
-
-
-export function EditSubtitles() {
-  const [visible, setVisible] = useState(true);
-  const [scrollLocked, setScrollLocked] = useScrollLock();
+export function EditSubtitles(database: any) {
+  console.log(database)
   const form = useForm({
     initialValues: {
-      subtitles: []
+      subtitles: database.database
     },
   });
 
-  var old_form: any;
+  const old_form = useForm({
+    initialValues: {
+      subtitles: database.database
+    },
+  });
+
+  const [visible, setVisible] = useState(true);
+  const [scrollLocked, setScrollLocked] = useScrollLock();
+  
 
   async function upload(form: any, old_form: any){
     try {
@@ -57,16 +59,15 @@ export function EditSubtitles() {
       const batch = writeBatch(db);
       
       // "test"の部分がidに対応する
-      for(let index=0; index < form.values.subtitles.length; index++){
+      for(let index=0; index < old_form.values.subtitles.length; index++){
         batch.delete(doc(db, "test", String(index)));
       }
+      
       
       // "test"の部分がidに対応する
       for(let index=0; index < form.values.subtitles.length; index++){
         batch.set(doc(db, "test", String(index)), form.values.subtitles[index]);
       }
-      
-      await sleep(2000);
 
       // 送信
       await batch.commit().then(() => {
@@ -81,23 +82,13 @@ export function EditSubtitles() {
   }
   
   
-  useEffect(() => {
-    // データを取得
-    const dataList = collection(db, "test");
-    var count: number = 0;
-    getDocs(dataList).then((snapShot)=>{
-      const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
-      form.setFieldValue('subtitles', JSON.parse(_data));
-      old_form = form;
-    })
-  }, []);
+  
     
   
-  const handlers = useRef<NumberInputHandlers>();
   const { classes } = useStyles();
   
 
-  const fields = form.values.subtitles.map((fieldData, index) => (
+  const fields = form.values.subtitles.map((fieldData: any, index: any) => (
     <Card key={index} withBorder radius="md" p={10} mb={"2em"} className={classes.card}>
       <LoadingOverlay loaderProps={{ color: 'yellow'}} visible={!visible} overlayBlur={2} />
       <Group mx={10} mt={3} position="apart">

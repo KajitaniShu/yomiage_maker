@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppShell,
   Navbar,
@@ -34,6 +34,9 @@ import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { EditSubtitles } from './EditSubtitles';
 import { PageNotFound } from './PageNotFound';
+import { Preview } from './Preview';
+import db from './firebase';
+import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
 
 const data = [
   { link: '/', label: 'プレビュー', icon: IconBellRinging },
@@ -46,9 +49,9 @@ const data = [
 ];
 
 const useStyles = createStyles((theme, _params, getRef) => {
-const icon = getRef('icon');
-  return {
-    header: {
+  const icon = getRef('icon');
+    return {
+      header: {
       color: '#393E46',
       paddingBottom: theme.spacing.md,
       marginBottom: theme.spacing.md * 1.5,
@@ -107,6 +110,19 @@ export default function App() {
   const { classes, cx } = useStyles();
   const [opened, { toggle, close }] = useDisclosure(false);
   const [active, setActive] = useState('プレビュー');
+
+  
+  const [database, setDatabase] = useState(); 
+
+  useEffect(() => {
+    console.log("access")
+    // データを取得
+    const dataList = collection(db, "test");
+    getDocs(dataList).then((snapShot)=>{
+      const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
+      setDatabase(JSON.parse(_data));
+    })
+  }, []);
 
   const links = data.map((item) => (
     <a
@@ -172,7 +188,7 @@ export default function App() {
           <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
             <Burger opened={opened} onClick={toggle} size="sm" />
           </MediaQuery>
-          <Title order={3}>読み上げメーカー</Title>
+          <Title color="gray.7" order={3}>読み上げメーカー</Title>
           <Code sx={{ fontWeight: 700 }}>v0.6.0</Code>
         </Group>
         <Group position="center" my="xl">
@@ -185,8 +201,10 @@ export default function App() {
       
     >
       {(() => {
-        if (active === "字幕編集") {
-          return <EditSubtitles />;
+        if (active === "プレビュー") {
+          return <Preview database={database} />;
+        } else if (active === "字幕編集") {
+          return <EditSubtitles database={database} />;
         } else {
           return <PageNotFound />;
         }
