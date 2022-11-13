@@ -1,8 +1,9 @@
-import { useRef, useEffect } from 'react';
-import { Group, TextInput, Box, Text, Code, Button,Textarea,Container, NumberInputHandlers, NumberInput, Transition, Center, Menu, ActionIcon, Badge, Divider, AspectRatio, SimpleGrid, Grid, Skeleton,  createStyles, Card, Image, Avatar } from '@mantine/core';
+import { useRef, useEffect, useState } from 'react';
+import { Group, TextInput, Box, Text, Code, Button,Textarea,Container, NumberInputHandlers, NumberInput, Transition, Center, Menu, ActionIcon, Badge, Divider, Tooltip, AspectRatio, CopyButton, SimpleGrid, Grid, Skeleton,  createStyles, Card, Image, Avatar, LoadingOverlay, Overlay } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useScrollLock } from '@mantine/hooks';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { IconTrashOff , IconTrash, IconPhotoEdit } from '@tabler/icons';
+import { IconTrashOff , IconTrash, IconPhotoEdit, IconCheck } from '@tabler/icons';
 import db from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
 
@@ -29,11 +30,14 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
+async function sleep(sec: number) {
+  return new Promise(resolve => setTimeout(resolve, sec*1000));
+}
 
 
 export function EditSubtitles() {
-
-
+  const [visible, setVisible] = useState(true);
+  const [scrollLocked, setScrollLocked] = useScrollLock();
   const form = useForm({
     initialValues: {
       subtitles: []
@@ -44,6 +48,10 @@ export function EditSubtitles() {
 
   async function upload(form: any, old_form: any){
     try {
+      // ボタンが押せないようにする
+      setScrollLocked(true);
+      setVisible(false);
+
       // 省略 
       // (Cloud Firestoreのインスタンスを初期化してdbにセット)
       const batch = writeBatch(db);
@@ -57,15 +65,18 @@ export function EditSubtitles() {
       for(let index=0; index < form.values.subtitles.length; index++){
         batch.set(doc(db, "test", String(index)), form.values.subtitles[index]);
       }
+      
+      await sleep(2000);
 
       // 送信
       await batch.commit().then(() => {
-        
-        console.log(`成功: `)
+        setScrollLocked(false);
+        setVisible(true);
       });
       
     } catch (err) {
-      console.log(`失敗: ${JSON.stringify(err)}`)
+      setScrollLocked(false);
+      setVisible(true);
     }
   }
   
@@ -88,6 +99,7 @@ export function EditSubtitles() {
 
   const fields = form.values.subtitles.map((fieldData, index) => (
     <Card key={index} withBorder radius="md" p={10} mb={"2em"} className={classes.card}>
+      <LoadingOverlay loaderProps={{ color: 'yellow'}} visible={!visible} overlayBlur={2} />
       <Group mx={10} mt={3} position="apart">
         <Badge color="yellow" variant="dot">{index+1}</Badge>
         <Menu shadow="md" width={200}>
@@ -166,13 +178,14 @@ export function EditSubtitles() {
 
   return (
     <Container size="xs" px="md">
-      
         <DragDropContext
           onDragEnd={({ destination, source } :any) =>
             form.reorderListItem('subtitles', { from: source.index, to: destination.index })
           }
         >
+          
           <Droppable droppableId="dnd-list" direction="vertical">
+            
             {(provided: any) => (
                 <div {...provided.droppableProps} ref={provided.innerRef}>
                 {fields}
@@ -181,16 +194,16 @@ export function EditSubtitles() {
             )}
           </Droppable>
         </DragDropContext>
-      
-      
 
       <Group position="center" mt="md">
+      
         <Button variant="outline" color="yellow" onClick={() => form.insertListItem('subtitles', { subtitle: '', time: '2', image: ''})}>
           字幕を追加
         </Button>
-        <Button onClick={async() => upload(form, old_form)}variant="filled" color="yellow">
+        <Button onClick={async() => upload(form, old_form)} variant="filled" color='yellow' >
           保存
         </Button>
+        
       </Group>
       
 
