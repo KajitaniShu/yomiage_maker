@@ -13,7 +13,9 @@ import {
   Burger,
   createStyles,
   useMantineTheme,
-  ScrollArea
+  ScrollArea,
+  useMantineColorScheme, 
+  ActionIcon,
 } from '@mantine/core';
 import {
   IconBellRinging,
@@ -25,10 +27,11 @@ import {
   IconReceipt2,
   IconSwitchHorizontal,
   IconLogout,
+  IconSun,
+  IconMoonStars
 } from '@tabler/icons';
 import { useDisclosure } from '@mantine/hooks';
-
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useForm } from '@mantine/form';
 import { EditSubtitles } from './EditSubtitles';
 import { PageNotFound } from './PageNotFound';
 
@@ -88,11 +91,11 @@ const icon = getRef('icon');
 
     linkActive: {
       '&, &:hover': {
-        backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor })
+        backgroundColor: theme.fn.variant({ variant: 'light', color: "yellow.1" })
           .background,
-        color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
+        color: theme.fn.variant({ variant: 'light', color: "yellow.6" }).color,
         [`& .${icon}`]: {
-          color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
+          color: theme.fn.variant({ variant: 'light', color: "yellow.6" }).color,
         },
       },
     },
@@ -103,7 +106,7 @@ export default function App() {
   const theme = useMantineTheme();
   const { classes, cx } = useStyles();
   const [opened, { toggle, close }] = useDisclosure(false);
-  const [active, setActive] = useState('Billing');
+  const [active, setActive] = useState('プレビュー');
 
   const links = data.map((item) => (
     <a
@@ -113,7 +116,7 @@ export default function App() {
       onClick={(event) => {
         event.preventDefault();
         toggle();
-        window.location.href = item.link;
+        setActive(item.label);
       }}
     >
       <item.icon className={classes.linkIcon} stroke={1.5} />
@@ -125,7 +128,7 @@ export default function App() {
     <AppShell
       styles={{
         main: {
-          background: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
+          background: theme.colorScheme === 'dark' ? theme.colors.dark[8] : "#ffffff",
         },
       }}
       navbarOffsetBreakpoint="sm"
@@ -172,17 +175,22 @@ export default function App() {
           <Title order={3}>読み上げメーカー</Title>
           <Code sx={{ fontWeight: 700 }}>v0.6.0</Code>
         </Group>
+        <Group position="center" my="xl">
+      </Group>
 
         </Header>
       }
+
+      
+      
     >
-      <BrowserRouter>
-      <Routes>
-        <Route path={"/"} element={<EditSubtitles />} />
-        <Route path={"*"} element={<PageNotFound />} />
-      </Routes>
-      </BrowserRouter>
-    
+      {(() => {
+        if (active === "字幕編集") {
+          return <EditSubtitles />;
+        } else {
+          return <PageNotFound />;
+        }
+      })()}
     </AppShell>
   );
 }

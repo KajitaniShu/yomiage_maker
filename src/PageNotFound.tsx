@@ -49,7 +49,7 @@ export function PageNotFound() {
           タイプミスがないかご確認ください．
           そうでない場合は「お問い合わせ」からお知らせください．
           </Text>
-          <Button variant="outline" size="md" mt="xl" className={classes.control}>
+          <Button  component="a" href="/" color="yellow" variant="outline" size="md" mt="xl" className={classes.control}>
             ホームに戻る
           </Button>
         </div>
