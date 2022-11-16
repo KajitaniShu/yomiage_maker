@@ -2,6 +2,7 @@ import React from 'react'
 import { Stage, Sphere, useGLTF, OrbitControls, useAnimations, CameraShake, Html } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { AspectRatio, Container, Image } from '@mantine/core';
+import { VRMasset } from './VRMassets';
 
 export function Preview(database: any) {
   const stage = useGLTF("./stage.glb");
@@ -31,6 +32,7 @@ export function Preview(database: any) {
             backgroundColor:'gray.100'
           }}
         >
+          <OrbitControls />
             <Stage>
             <mesh>
               <primitive
@@ -41,14 +43,7 @@ export function Preview(database: any) {
               />
               
             </mesh>
-            <mesh>
-            <primitive
-                object={player.scene}
-                position={[0.44, -0,1, 0]}
-                rotation={[0, 0, 0]}
-                scale={[0.3, 0.3, 0.3]}
-              />
-            </mesh>
+            <VRMasset url='./inuinu.vrm' />
 
             <Html zIndexRange={[2, 1]} position={[-0.324, 0.83, 0.75]}  transform occlude distanceFactor={1.4} center >
               <AspectRatio ratio={16 / 9} w={330} >
