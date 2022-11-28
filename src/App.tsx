@@ -28,24 +28,23 @@ import {
   IconSwitchHorizontal,
   IconLogout,
   IconSun,
-  IconMoonStars
+  IconMoonStars,
+  IconDeviceTv,
+  IconEdit,
+  IconUserCircle 
 } from '@tabler/icons';
 import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { EditSubtitles } from './EditSubtitles';
 import { PageNotFound } from './PageNotFound';
 import { Preview } from './Preview';
-import db from './firebase';
+import { db }  from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
 
 const data = [
-  { link: '/', label: 'プレビュー', icon: IconBellRinging },
-  { link: '/edit-subtitles', label: '字幕編集', icon: IconReceipt2 },
-  { link: '', label: 'Security', icon: IconFingerprint },
-  { link: '', label: 'SSH Keys', icon: IconKey },
-  { link: '', label: 'Databases', icon: IconDatabaseImport },
-  { link: '', label: 'Authentication', icon: Icon2fa },
-  { link: '', label: 'Other Settings', icon: IconSettings },
+  { link: '/', label: 'プレビュー', icon: IconDeviceTv },
+  { link: '/edit-subtitles', label: '字幕編集', icon: IconEdit },
+  { link: '/account', label: 'アカウント', icon: IconUserCircle },
 ];
 
 const useStyles = createStyles((theme, _params, getRef) => {
@@ -115,13 +114,16 @@ export default function App() {
   const [database, setDatabase] = useState(); 
 
   useEffect(() => {
+    
     console.log("access")
     // データを取得
     const dataList = collection(db, "test");
     getDocs(dataList).then((snapShot)=>{
       const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
+      console.log(JSON.parse(_data))
       setDatabase(JSON.parse(_data));
     })
+    
   }, []);
 
   const links = data.map((item) => (

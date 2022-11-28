@@ -4,8 +4,11 @@ import { useForm } from '@mantine/form';
 import { useScrollLock } from '@mantine/hooks';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { IconTrashOff , IconTrash, IconPhotoEdit, IconCheck } from '@tabler/icons';
-import db from './firebase';
+import { db, storage } from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
+import { getStorage, ref, uploadBytes } from 'firebase/storage';
+import { Dropzone, IMAGE_MIME_TYPE, FileWithPath, MIME_TYPES  } from '@mantine/dropzone';
+
 
 const useStyles = createStyles((theme) => ({
   card: {
@@ -30,8 +33,8 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
+
 export function EditSubtitles(database: any) {
-  console.log(database)
   const form = useForm({
     initialValues: {
       subtitles: database.database
@@ -45,8 +48,7 @@ export function EditSubtitles(database: any) {
   });
 
   const [visible, setVisible] = useState(true);
-  const [scrollLocked, setScrollLocked] = useScrollLock();
-  
+  const [scrollLocked, setScrollLocked] = useScrollLock();  
 
   async function upload(form: any, old_form: any){
     try {
@@ -54,13 +56,18 @@ export function EditSubtitles(database: any) {
       setScrollLocked(true);
       setVisible(false);
 
-      // 省略 
       // (Cloud Firestoreのインスタンスを初期化してdbにセット)
       const batch = writeBatch(db);
       
       // "test"の部分がidに対応する
       for(let index=0; index < old_form.values.subtitles.length; index++){
         batch.delete(doc(db, "test", String(index)));
+      }
+
+      // ファイルアップロードテスト
+      if(files){
+        const imageRef = ref(storage, "id0001/"+"images/"+files);
+        uploadBytes(imageRef, files);
       }
       
       
@@ -86,7 +93,8 @@ export function EditSubtitles(database: any) {
     
   
   const { classes } = useStyles();
-  
+  const [files, setFiles] = useState<FileWithPath>();
+  const openRef = useRef<() => void>(null);
 
   const fields = form.values.subtitles.map((fieldData: any, index: any) => (
     <Card key={index} withBorder radius="md" p={10} mb={"2em"} className={classes.card}>
@@ -148,16 +156,42 @@ export function EditSubtitles(database: any) {
             </Text>
             <Box h={150} p={10} className={classes.imageWrapper}>
               <Group position="right" mx={4}>
-                <ActionIcon size="xs" variant="light">
+                <ActionIcon size="xs" variant="light" onClick={() => {if(openRef.current) openRef.current()}}>
                   <IconPhotoEdit size={18} />
                 </ActionIcon>
+                
                 <ActionIcon size="xs" variant="light">
                   <IconTrash size={18} />
                 </ActionIcon>
               </Group>
               <Divider my="xs" />
               <Box>
-                <Image withPlaceholder height={110} radius="md"  src='' />
+              {!files ? 
+                <Dropzone
+                  h={110} 
+                  maxSize={3 * 1024 ** 2}
+                  
+                  onDrop={(file) => {
+                    file.map((_file, index) => {
+                      setFiles(_file);
+                    })
+                  }}
+                  accept={[MIME_TYPES.png, MIME_TYPES.jpeg]}
+                >
+                  <Text align="center" size="sm" mt="xs" color="dimmed">
+                    <Dropzone.Reject>png, jpgのみ選択してください</Dropzone.Reject>
+                    <Dropzone.Idle>画像(png, jpg)を選択してください</Dropzone.Idle>
+                  </Text>
+                </Dropzone>
+                :
+                <Image
+                  key={index}
+                  src={files.path} 
+                  height={110} 
+                  radius="md"
+                  withPlaceholder
+                />
+              }
               </Box>
             </Box>
           </Grid.Col>
