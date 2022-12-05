@@ -12,6 +12,8 @@ export function MainScene(isEnd: any) {
 
   return (
     <>
+      <directionalLight castShadow intensity={0.4} position={[-10, 50, 300]} shadow-mapSize={[512, 512]} shadow-bias={-0.02}/>
+      <hemisphereLight intensity={0.7} color="whtie" position={[0, 1, 1]} />
       <mesh>
         <primitive
           object={stage.scene}
@@ -21,9 +23,9 @@ export function MainScene(isEnd: any) {
         />
         <primitive
           object={screen.scene}
-          position={[0, 0, 0.8]}
+          position={[-0.003, 0.71, 0.8]}
           rotation={[0, Math.PI/2, 0]}
-          scale={[1, 1, 1]}
+          scale={[1.09, 1.08, 1.08]}
         />
       </mesh>
       <VRMasset isEnd={isEnd}/>

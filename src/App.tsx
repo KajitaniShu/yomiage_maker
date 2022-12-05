@@ -120,7 +120,6 @@ export default function App() {
     const dataList = collection(db, "test");
     getDocs(dataList).then((snapShot)=>{
       const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
-      console.log(JSON.parse(_data))
       setDatabase(JSON.parse(_data));
     })
     
@@ -203,6 +202,7 @@ export default function App() {
       
     >
       {(() => {
+        if(database !== undefined)
         if (active === "プレビュー") {
           return <Preview database={database} />;
         } else if (active === "字幕編集") {
