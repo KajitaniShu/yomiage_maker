@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useLoader, useFrame } from 'react-three-fiber'
-import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader"
-import { Stage, Sphere, useGLTF, OrbitControls, useAnimations, CameraShake, Html } from '@react-three/drei'
+import { useState, useRef } from 'react'
+import { useFrame } from 'react-three-fiber'
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
-import { VRM, VRMUtils, VRMSchema, VRMHumanoidImporter, VRMHumanoid } from '@pixiv/three-vrm'
-import { Scene, Group } from 'three'
+import { VRM, VRMSchema, VRMHumanoid } from '@pixiv/three-vrm'
 
 interface Props {
-  url: string
+  isEnd: boolean
 }
 
-export function VRMasset({ url }: Props) {
-
+export function VRMasset({ isEnd }: Props) {
   const [inuinu, setInuinu] = useState<VRM>();
   const lip = useRef<number>(0.0);
   const animVec = useRef<number>(1);
@@ -48,17 +45,16 @@ export function VRMasset({ url }: Props) {
       inuinu.blendShapeProxy?.update()
       
       // 口パク
-      if(Math.abs(lip.current + animVec.current * delta * 8) > 0.8) animVec.current = -1 * animVec.current;
+      if(!isEnd && Math.abs(lip.current + animVec.current * delta * 8) > 0.8) animVec.current = -1 * animVec.current;
       lip.current += animVec.current * delta * 8;
     }
-    
   });
 
   return (
     <>
     {inuinu ? (
-      <primitive object={inuinu.scene} position={[0.53, -0.02, 1.2]}
-      rotation={[0, Math.PI, 0]}
+      <primitive object={inuinu.scene} position={[0.84, -0.02, 1.2]}
+      rotation={[0, Math.PI-0.3, 0]}
       scale={[1, 1, 1]}  />
     ) : ""}
     </>

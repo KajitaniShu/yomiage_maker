@@ -1,18 +1,28 @@
-import { useRef, useEffect, useState } from 'react';
-import { Group, TextInput, Box, Text, Code, Button,Textarea,Container, NumberInputHandlers, NumberInput, Transition, Center, Menu, ActionIcon, Badge, Divider, Tooltip, AspectRatio, CopyButton, SimpleGrid, Grid, Skeleton,  createStyles, Card, Image, Avatar, LoadingOverlay, Overlay } from '@mantine/core';
+import { useState } from 'react';
+import { Group, TextInput, Box, Text, Code, Button,Textarea,Container, Menu, ActionIcon, Badge, Divider, SimpleGrid, Grid, createStyles, Card, Image, LoadingOverlay} from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useScrollLock } from '@mantine/hooks';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { IconTrashOff , IconTrash, IconPhotoEdit, IconCheck } from '@tabler/icons';
+import { useScrollLock, randomId  } from '@mantine/hooks';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { IconTrashOff , IconTrash, IconPhotoEdit} from '@tabler/icons';
 import { db, storage } from './firebase';
-import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
-import { getStorage, ref, uploadBytes } from 'firebase/storage';
-import { Dropzone, IMAGE_MIME_TYPE, FileWithPath, MIME_TYPES  } from '@mantine/dropzone';
+import { doc, writeBatch} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Dropzone, MIME_TYPES  } from '@mantine/dropzone';
 
 
 const useStyles = createStyles((theme) => ({
   card: {
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+  },
+
+  disabled: {
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+    borderColor: theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2],
+    cursor: 'not-allowed',
+
+    '& *': {
+      color: theme.colorScheme === 'dark' ? theme.colors.dark[3] : theme.colors.gray[5],
+    },
   },
 
   title: {
@@ -56,23 +66,62 @@ export function EditSubtitles(database: any) {
       setScrollLocked(true);
       setVisible(false);
 
+      // 使わなくなったファイルを削除
+      /*
+      const _old_form = old_form.values.subtitles.filter((element: any, index: number, self: any) => 
+        self.findIndex((e: any) => e.image === element.image) === index
+      )
+      if(_old_form.values.subtitles.length){
+        for(let index=0; index < _old_form.values.subtitles.length; index++){
+          console.log(index);
+          if(!form.some((item: any) => item.image === _old_form.values.subtitles[index].image)) {
+            console.log(_old_form.values.subtitles[index].image);
+            deleteObject(ref(storage, _old_form.values.subtitles[index].image)).then(() => {
+              // success
+              console.log("success")
+            }).catch((error) => {
+              // error
+              console.log("error")
+            });
+          }
+        }
+      }
+      */
+
+      // ファイルアップロード
+      for(let index=0; index < form.values.subtitles.length; index++){
+        if(form.values.subtitles[index].image.path !== undefined) {
+          const localPath = form.values.subtitles[index].image;
+          const filePath = "id0001/"+"images/"+randomId();
+          const imageRef = ref(storage, filePath);
+          
+          await uploadBytes(imageRef, form.values.subtitles[index].image);
+          const fileURL = await getDownloadURL(imageRef);
+          
+          form.insertListItem('subtitles', {'image': fileURL, 'subtitle': form.values.subtitles[index].subtitle, 'time': form.values.subtitles[index].time}, index)
+          form.removeListItem('subtitles', index+1);
+          
+          form.values.subtitles.filter((element: any, index: number, self: any) => {
+            if(element.image === localPath) {
+              form.insertListItem('subtitles', {'image': fileURL, 'subtitle': element.subtitle, 'time': element.time}, index)
+              form.removeListItem('subtitles', index+1);
+            }
+          });
+        }
+      }
+
       // (Cloud Firestoreのインスタンスを初期化してdbにセット)
       const batch = writeBatch(db);
       
       // "test"の部分がidに対応する
       for(let index=0; index < old_form.values.subtitles.length; index++){
+        console.log("delete " + form.values.subtitles[index])
         batch.delete(doc(db, "test", String(index)));
       }
-
-      // ファイルアップロードテスト
-      if(files){
-        const imageRef = ref(storage, "id0001/"+"images/"+files);
-        uploadBytes(imageRef, files);
-      }
-      
       
       // "test"の部分がidに対応する
       for(let index=0; index < form.values.subtitles.length; index++){
+        console.log("set " + form.values.subtitles[index])
         batch.set(doc(db, "test", String(index)), form.values.subtitles[index]);
       }
 
@@ -88,13 +137,12 @@ export function EditSubtitles(database: any) {
     }
   }
   
-  
-  
-    
-  
   const { classes } = useStyles();
-  const [files, setFiles] = useState<FileWithPath>();
-  const openRef = useRef<() => void>(null);
+  // 画像ファイルの種類
+  const [fileCount, setFileCount] = useState<number>(form.values.subtitles.filter((element: any, index: number, self: any) => 
+    self.findIndex((e: any) => e.image === element.image) === index
+  ).length); 
+
 
   const fields = form.values.subtitles.map((fieldData: any, index: any) => (
     <Card key={index} withBorder radius="md" p={10} mb={"2em"} className={classes.card}>
@@ -112,7 +160,18 @@ export function EditSubtitles(database: any) {
           <Menu.Label>本当に削除しますか</Menu.Label>
           <Menu.Divider />
           <Menu.Item icon={<IconTrashOff size={14} />}>キャンセル</Menu.Item>
-          <Menu.Item color="red" onClick={() => form.removeListItem('subtitles', index)} icon={<IconTrash size={14} />}>削除する</Menu.Item>
+          <Menu.Item 
+            color="red" 
+            onClick={() => { 
+              form.removeListItem('subtitles', index)
+              setFileCount(form.values.subtitles.filter((element: any, index: number, self: any) => 
+                self.findIndex((e: any) => e.image === element.image) === index
+              ).length);
+            }} 
+            icon={<IconTrash size={14} />}
+          >
+              削除する
+          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
       </Group>
@@ -156,41 +215,58 @@ export function EditSubtitles(database: any) {
             </Text>
             <Box h={150} p={10} className={classes.imageWrapper}>
               <Group position="right" mx={4}>
-                <ActionIcon size="xs" variant="light" onClick={() => {if(openRef.current) openRef.current()}}>
+                <ActionIcon size="xs" variant="light">
                   <IconPhotoEdit size={18} />
                 </ActionIcon>
                 
-                <ActionIcon size="xs" variant="light">
+                <ActionIcon size="xs" variant="light" onClick={() => { 
+                  form.insertListItem('subtitles', {'image': "", 'subtitle': fieldData.subtitle, 'time': fieldData.time}, index)
+                  form.removeListItem('subtitles', index+1);
+                  setFileCount(form.values.subtitles.filter((element: any, index: number, self: any) => 
+                    self.findIndex((e: any) => e.image === element.image) === index
+                  ).length);
+                }}>
                   <IconTrash size={18} />
                 </ActionIcon>
               </Group>
               <Divider my="xs" />
               <Box>
-              {!files ? 
+              {(fieldData.image === "") ? 
                 <Dropzone
                   h={110} 
                   maxSize={3 * 1024 ** 2}
-                  
+                  disabled={fileCount < 6 ? false : true}
+                  className={fileCount < 6 ? ("") : (classes.disabled)}
+              
                   onDrop={(file) => {
-                    file.map((_file, index) => {
-                      setFiles(_file);
-                    })
+                    if(fileCount < 6){
+                      form.insertListItem('subtitles', {'image': file[0], 'subtitle': fieldData.subtitle, 'time': fieldData.time}, index)
+                      form.removeListItem('subtitles', index+1)
+                      setFileCount(form.values.subtitles.filter((element: any, index: number, self: any) => 
+                        self.findIndex((e: any) => e.image === element.image) === index
+                      ).length);
+                    }
                   }}
                   accept={[MIME_TYPES.png, MIME_TYPES.jpeg]}
                 >
                   <Text align="center" size="sm" mt="xs" color="dimmed">
                     <Dropzone.Reject>png, jpgのみ選択してください</Dropzone.Reject>
-                    <Dropzone.Idle>画像(png, jpg)を選択してください</Dropzone.Idle>
+                    <Dropzone.Idle>
+                      {fileCount < 6 ? "画像(png, jpg)を選択してください" : "登録できる画像は5種類までです"}
+                    </Dropzone.Idle>
                   </Text>
                 </Dropzone>
                 :
+                
                 <Image
                   key={index}
-                  src={files.path} 
+                  src={(fieldData.image.path === undefined) ? fieldData.image : URL.createObjectURL(fieldData.image)} 
                   height={110} 
                   radius="md"
                   withPlaceholder
+                  
                 />
+                
               }
               </Box>
             </Box>
@@ -222,7 +298,10 @@ export function EditSubtitles(database: any) {
 
       <Group position="center" mt="md">
       
-        <Button variant="outline" color="yellow" onClick={() => form.insertListItem('subtitles', { subtitle: '', time: '2', image: ''})}>
+        <Button variant="outline" color="yellow" onClick={() => {
+          if(form.values.subtitles.length > 0) {form.insertListItem('subtitles', { subtitle: '', time: '2', image: form.values.subtitles[form.values.subtitles.length-1].image})}
+          else {form.insertListItem('subtitles', { subtitle: '', time: '2', image:""})}
+          }}>
           字幕を追加
         </Button>
         <Button onClick={async() => upload(form, old_form)} variant="filled" color='yellow' >

@@ -1,0 +1,17 @@
+.relative{
+  position: 'relative';
+
+}
+
+.absolute{
+  position: 'absolute';
+  border-radius:"12px";
+  border: "1px solid #E9ECEF";
+  top:40;
+  left:0;
+}
+
+.screen {
+  border-radius:"12px";
+  border: "1px solid #E9ECEF";
+}

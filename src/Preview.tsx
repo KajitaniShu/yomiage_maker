@@ -1,74 +1,123 @@
-import React from 'react'
-import { Stage, Sphere, useGLTF, OrbitControls, useAnimations, CameraShake, Html } from '@react-three/drei'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { AspectRatio, Container, Image, Alert, Text, MantineProvider, Paper } from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { VRMasset } from './VRMassets';
-import { IconBone  } from '@tabler/icons'; 
+import React, {useEffect, useState, useRef, Suspense} from 'react'
+import { Canvas, useLoader } from '@react-three/fiber'
+import { AspectRatio, Container, Card, Image, Paper, Text, Box, ActionIcon, Slider } from '@mantine/core';
+import { useInterval } from '@mantine/hooks';
+import { MainScene } from './MainScene';
+import { OrbitControls, ContactShadows, Environment, Html, useGLTF } from '@react-three/drei';
+import './mainScene.css';
+import { MeshBasicMaterial, Vector3, TextureLoader } from 'three';
+import { IconReload, IconCircleDot } from '@tabler/icons';
+
+
 
 
 export function Preview(database: any) {
+  const seconds = useRef<number>(0);
+  const [data, setData] = useState<string>();
+  const index = useRef<number>(0);
+  const [image, setImage] = useState<string>();
+  const [isEnd, setIsEnd] = useState<boolean>(false);
   
-  const stage = useGLTF("./stage.glb");
-  const player = useGLTF("./knight.glb");
-  const playerScene = player.scene;
-  const playerAnimation = player.animations;
 
+  function replay() {
+    console.log("replay")
+    seconds.current = 0;
+    index.current = 0;
+    setIsEnd(false);
+  }
+
+  const interval = useInterval(() => {
+    if(!isEnd) {
+      if(database.database[index.current].time > seconds.current) {
+        seconds.current++;
+      }
+      else if (index.current >= database.database.length-1) {
+        setIsEnd(true);
+      }
+      else {
+        seconds.current = 0;
+        index.current++;
+        setImage(database.database[index.current].image);
+        setData(database.database[index.current].subtitle);
+        console.log("upadate: ", seconds.current, " ", index);
+      }
+    }
+  }, 1000);
+  
+
+  useEffect(() => {
+    if(!isEnd){  
+      console.log("start")
+      interval.start();
+      setImage(database.database[index.current].image);
+      setData(database.database[index.current].subtitle);
+    } else {
+      console.log("stop")
+      interval.stop();
+    }
+  }, [isEnd]);
 
   return (
-    
-      <React.Suspense fallback={null}>
         <Container>
-        <AspectRatio ratio={16 / 9} >
-        <Canvas
-          camera={{
-            position: [0,0,0],
-            zoom: 4,
-            fov: 50,
-          }}
-          style={{
-            borderRadius:"10px",
-            border: "1px solid #E9ECEF",
-            position: 'absolute',
-            top: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor:'gray.100'
-          }}
-        >
-          <Stage>
-            <mesh>
-              <primitive
-                object={stage.scene}
-                position={[0, 0, 0.8]}
-                rotation={[0, Math.PI/2, 0]}
-                scale={[1, 1, 1]}
-              />
+        <div className="relative">
+          <AspectRatio ratio={16 / 9} >
+            <Canvas
+              shadows
+              dpr={[1, 2]}
+              camera={{
+                position: [0, 0.7, 3.9],
+                zoom: 3,
+              }}
+              style={{
+                borderRadius:"12px",
+                border: "1px solid #E9ECEF",
+                position: 'absolute',
+                top: 0,
+                width: '100%',
+                height: '100%',
+              }}
+              onCreated={({ camera, gl, scene }) => {
+                gl.setPixelRatio(16/9);
+                gl.shadowMap.enabled = true;
+                camera.lookAt(new Vector3(0, 0.7, 0));
+              }}
+            >
               
-            </mesh>
-            <VRMasset url='./inuinu.vrm' />
-
-            <Html zIndexRange={[2, 1]} position={[-0.543, 0.755, 0.75]} transform occlude distanceFactor={1.4} center >
-              <AspectRatio ratio={16 / 9} w={370} >
-                <Image  src={'./test.png'} radius="md" withPlaceholder  />
-              </AspectRatio>
-            </Html>
-            <Html zIndexRange={[2, 1]} position={[0.708, 0.738, 0.75]} scale={[0.23, 0.23, 0.23]} transform occlude distanceFactor={1.4} center >
-              <AspectRatio ratio={16 / 10} w={500} >
-                <Image src={'./ad.png'} radius="lg" withPlaceholder  />
-              </AspectRatio>
-            </Html>
-
-            <Html zIndexRange={[2, 1]} position={[-0.55, 0.15, 1]} scale={[1, 1, 1]} transform  distanceFactor={1.2} center >
-              <Paper w={"450px"} bg="dark" radius="md" p="xs">
-
-              <Text color="gray.1" >皆さんはテキストと画像を設定するだけで3Dキャラクターがプレゼンしてくれたら楽だと思いませんか？？</Text>
-            </Paper>
-            </Html>
-          </Stage>
-        </Canvas>
-        </AspectRatio>
+              <MainScene isEnd={isEnd} />
+              <ContactShadows position={[0, 0, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+              <Environment preset="city" />
+            </Canvas>
+          <div className="absolute">
+            <AspectRatio ratio={16 / 9} w={"50%"} >
+              <Image src={image} withPlaceholder />
+            </AspectRatio>
+            
+          </div>
+          {isEnd && 
+            <div className="absolute">
+              <ActionIcon color="dark" size="xl" radius="xl" variant="light" onClick={replay}>
+                <IconReload size={20} />
+              </ActionIcon>
+            </div>
+          }
+          
+          </AspectRatio>
+        </div>
+        <Slider
+          mt={"sm"}
+          mx={"auto"}
+          color="yellow"
+          w={"98%"}
+          max={database.database.length-1}
+          step={database.database.length-1}
+          min={0}
+          value={index.current}
+          size={5}
+          radius={10}
+        />
+        <Paper  withBorder bg="dark" radius="md" p="xs" mx={"lg"} my={"md"} px={"lg"} >
+          <Text color="gray.1" >{(data !== undefined ) ? data : "loading..."}</Text>
+        </Paper>
     </Container>
-      </React.Suspense>
   )
 }
