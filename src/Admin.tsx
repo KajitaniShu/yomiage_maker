@@ -12,7 +12,8 @@ import {
   createStyles,
   useMantineTheme,
   ScrollArea,
-  Button
+  Button,
+  Image
 } from '@mantine/core';
 import {
   IconLogout,

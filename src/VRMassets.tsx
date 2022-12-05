@@ -17,7 +17,7 @@ export function VRMasset({ isEnd }: Props) {
   
   // VRMの読み込み
   const loader = new GLTFLoader()
-  loader.load('./inuinu.vrm',
+  loader.load('../inuinu.vrm',
     (gltf) => {
       VRM.from(gltf).then( (vrm) => {
         setInuinu(vrm)

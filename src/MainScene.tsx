@@ -11,8 +11,8 @@ interface Props {
 
 export function MainScene({isEnd}: Props) {
   
-  const stage = useGLTF("./stage.glb");
-  const screen = useGLTF("screen.glb");
+  const stage = useGLTF("../stage.glb");
+  const screen = useGLTF("../screen.glb");
 
   return (
     <>

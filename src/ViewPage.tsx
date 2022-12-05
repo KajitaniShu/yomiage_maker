@@ -77,7 +77,7 @@ export function ViewPage() {
         </Header>
       {(database && database.length > 0 && viewId) ? 
         <Center style={{ height: "90vh" }}><View database={database} id={viewId} /></Center> : 
-        <Center style={{ height: "90vh" }}><PageNotFound /></Center>
+        <PageNotFound />
         
       }
     </>

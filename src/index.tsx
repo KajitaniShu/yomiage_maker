@@ -19,11 +19,12 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.PUBLIC_URL}>
     <Routes>
         <Route index element={<Home />} />
         <Route path="admin/:adminId" element={<Admin />} />
         <Route path="view/:viewId" element={<ViewPage />} />
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </BrowserRouter>
       
