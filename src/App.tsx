@@ -3,9 +3,7 @@ import {
   AppShell,
   Navbar,
   Header,
-  Footer,
-  Aside,
-  Text,
+  Avatar,
   MediaQuery,
   Group,
   Code,
@@ -14,21 +12,9 @@ import {
   createStyles,
   useMantineTheme,
   ScrollArea,
-  useMantineColorScheme, 
-  ActionIcon,
 } from '@mantine/core';
 import {
-  IconBellRinging,
-  IconFingerprint,
-  IconKey,
-  IconSettings,
-  Icon2fa,
-  IconDatabaseImport,
-  IconReceipt2,
-  IconSwitchHorizontal,
   IconLogout,
-  IconSun,
-  IconMoonStars,
   IconDeviceTv,
   IconEdit,
   IconUserCircle 
@@ -41,6 +27,8 @@ import { Preview } from './Preview';
 import { Login } from './Login';
 import { db }  from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
+import { auth } from './firebase'
+import { useAuthState } from 'react-firebase-hooks/auth'
 
 const data = [
   { link: '/', label: 'プレビュー', icon: IconDeviceTv },
@@ -49,7 +37,7 @@ const data = [
 ];
 
 const useStyles = createStyles((theme, _params, getRef) => {
-  const icon = getRef('icon');
+  const icon:any = getRef('icon');
     return {
       header: {
       color: '#393E46',
@@ -105,26 +93,27 @@ const useStyles = createStyles((theme, _params, getRef) => {
   }
 });
 
+
 export default function App() {
+  const [user, initialising] = useAuthState(auth);
   const theme = useMantineTheme();
   const { classes, cx } = useStyles();
   const [opened, { toggle, close }] = useDisclosure(false);
-  const [active, setActive] = useState('ログイン');
-
-  
+  const [active, setActive] = useState('プレビュー');
   const [database, setDatabase] = useState(); 
 
   useEffect(() => {
-    
-    console.log("access")
-    // データを取得
-    const dataList = collection(db, "test");
-    getDocs(dataList).then((snapShot)=>{
-      const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
-      setDatabase(JSON.parse(_data));
-    })
-    
-  }, []);
+    console.log(user)
+    if(user && database === undefined){
+      console.log("access")
+      // データを取得
+      const dataList = collection(db, "test");
+      getDocs(dataList).then((snapShot)=>{
+        const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
+        setDatabase(JSON.parse(_data));
+      })
+    }
+  }, [user]);
 
   const links = data.map((item) => (
     <a
@@ -160,7 +149,7 @@ export default function App() {
 
             <Navbar.Section className={classes.footer}>
 
-              <a href="/" className={classes.link} onClick={(event) => event.preventDefault()}>
+              <a href="/" className={classes.link} onClick={() => auth.signOut()}>
                 <IconLogout className={classes.linkIcon} stroke={1.5} />
                 <span>Logout</span>
               </a>
@@ -203,16 +192,19 @@ export default function App() {
       
     >
       {(() => {
-        console.log(active)
-        if(database !== undefined)
-        if (active === "ログイン") {
-          return <Login />
-        } else if (active === "プレビュー") {
-          return <Preview database={database} />;
-        } else if (active === "字幕編集") {
-          return <EditSubtitles database={database} />;
+        if(user && database !== undefined) {
+          if (active === "プレビュー") {
+            return (
+            <>
+            <Avatar src={auth.currentUser?.photoURL} alt="it's me" />
+            <Preview database={database} />
+          </>);
+          } else if (active === "字幕編集") {
+            return <EditSubtitles database={database} />;
+          } else return  <PageNotFound />            
         } else {
-          return <PageNotFound />;
+
+          return <Login />;
         }
       })()}
     </AppShell>
