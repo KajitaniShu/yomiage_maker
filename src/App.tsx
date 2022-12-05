@@ -38,6 +38,7 @@ import { useForm } from '@mantine/form';
 import { EditSubtitles } from './EditSubtitles';
 import { PageNotFound } from './PageNotFound';
 import { Preview } from './Preview';
+import { Login } from './Login';
 import { db }  from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
 
@@ -108,7 +109,7 @@ export default function App() {
   const theme = useMantineTheme();
   const { classes, cx } = useStyles();
   const [opened, { toggle, close }] = useDisclosure(false);
-  const [active, setActive] = useState('プレビュー');
+  const [active, setActive] = useState('ログイン');
 
   
   const [database, setDatabase] = useState(); 
@@ -202,8 +203,11 @@ export default function App() {
       
     >
       {(() => {
+        console.log(active)
         if(database !== undefined)
-        if (active === "プレビュー") {
+        if (active === "ログイン") {
+          return <Login />
+        } else if (active === "プレビュー") {
           return <Preview database={database} />;
         } else if (active === "字幕編集") {
           return <EditSubtitles database={database} />;
