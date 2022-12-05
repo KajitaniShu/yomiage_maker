@@ -10,8 +10,13 @@ import { IconReload, IconCircleDot } from '@tabler/icons';
 
 
 
+interface Props {
+  database: any,
+  id: string
+}
 
-export function Preview(database: any) {
+
+export function View({database, id}: Props) {
   const seconds = useRef<number>(0);
   const [data, setData] = useState<string>();
   const index = useRef<number>(0);
@@ -20,7 +25,6 @@ export function Preview(database: any) {
   
 
   function replay() {
-    console.log("replay")
     seconds.current = 0;
     index.current = 0;
     setIsEnd(false);
@@ -28,17 +32,17 @@ export function Preview(database: any) {
 
   const interval = useInterval(() => {
     if(!isEnd) {
-      if(database.database[index.current].time > seconds.current) {
+      if(database[index.current].time > seconds.current) {
         seconds.current++;
       }
-      else if (index.current >= database.database.length-1) {
+      else if (index.current >= database.length-1) {
         setIsEnd(true);
       }
       else {
         seconds.current = 0;
         index.current++;
-        setImage(database.database[index.current].image);
-        setData(database.database[index.current].subtitle);
+        setImage(database[index.current].image);
+        setData(database[index.current].subtitle);
         console.log("upadate: ", seconds.current, " ", index);
       }
     }
@@ -46,11 +50,12 @@ export function Preview(database: any) {
   
 
   useEffect(() => {
-    if(!isEnd){  
+    console.log()
+    if(!isEnd && database.length > 0){  
       console.log("start")
       interval.start();
-      setImage(database.database[index.current].image);
-      setData(database.database[index.current].subtitle);
+      setImage(database[index.current].image);
+      setData(database[index.current].subtitle);
     } else {
       console.log("stop")
       interval.stop();
@@ -58,7 +63,7 @@ export function Preview(database: any) {
   }, [isEnd]);
 
   return (
-        <Container>
+        <Container pt={"md"} w={"100%"}>
         <div className="relative">
           <AspectRatio ratio={16 / 9} >
             <Canvas
@@ -89,7 +94,7 @@ export function Preview(database: any) {
             </Canvas>
           <div className="absolute">
             <AspectRatio ratio={16 / 9} w={"50%"} >
-              <Image src={image} withPlaceholder />
+              <Image src={(data !== undefined ) ? image: "./yomiagemaker.png"} withPlaceholder />
             </AspectRatio>
             
           </div>
@@ -108,8 +113,8 @@ export function Preview(database: any) {
           mx={"auto"}
           color="yellow"
           w={"98%"}
-          max={database.database.length-1}
-          step={database.database.length-1}
+          max={database.length-1}
+          step={database.length-1}
           min={0}
           value={index.current}
           size={5}

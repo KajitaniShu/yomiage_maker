@@ -12,6 +12,7 @@ import {
   createStyles,
   useMantineTheme,
   ScrollArea,
+  Button
 } from '@mantine/core';
 import {
   IconLogout,
@@ -23,12 +24,13 @@ import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { EditSubtitles } from './EditSubtitles';
 import { PageNotFound } from './PageNotFound';
-import { Preview } from './Preview';
+import { View } from './View';
 import { Login } from './Login';
 import { db }  from './firebase';
 import {collection, doc, getDocs, setDoc, writeBatch} from 'firebase/firestore';
 import { auth } from './firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
+import { useParams } from 'react-router-dom'
 
 const data = [
   { link: '/', label: 'プレビュー', icon: IconDeviceTv },
@@ -94,7 +96,8 @@ const useStyles = createStyles((theme, _params, getRef) => {
 });
 
 
-export default function App() {
+export default function Admin() {
+  const { adminId } = useParams()
   const [user, initialising] = useAuthState(auth);
   const theme = useMantineTheme();
   const { classes, cx } = useStyles();
@@ -104,13 +107,14 @@ export default function App() {
 
   useEffect(() => {
     console.log(user)
-    if(user && database === undefined){
-      console.log("access")
+    console.log(adminId);
+    if(user && adminId && database === undefined){
       // データを取得
-      const dataList = collection(db, "test");
+      const dataList = collection(db, adminId);
       getDocs(dataList).then((snapShot)=>{
         const _data = JSON.stringify(snapShot.docs.map((doc) => ({...doc.data()})));
         setDatabase(JSON.parse(_data));
+        console.log(JSON.parse(_data));
       })
     }
   }, [user]);
@@ -179,7 +183,8 @@ export default function App() {
           <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
             <Burger opened={opened} onClick={toggle} size="sm" />
           </MediaQuery>
-          <Title color="gray.7" order={3}>読み上げメーカー</Title>
+          <Button color="gray" variant="subtle"  component="a" href="/"><Title color="gray.7" order={3} >読み上げメーカー</Title></Button>
+          
           <Code sx={{ fontWeight: 700 }}>v0.6.0</Code>
         </Group>
         <Group position="center" my="xl">
@@ -192,15 +197,15 @@ export default function App() {
       
     >
       {(() => {
-        if(user && database !== undefined) {
+        if(user && database !== undefined && adminId) {
           if (active === "プレビュー") {
             return (
             <>
             <Avatar src={auth.currentUser?.photoURL} alt="it's me" />
-            <Preview database={database} />
+            <View database={database} id={adminId}/>
           </>);
           } else if (active === "字幕編集") {
-            return <EditSubtitles database={database} />;
+            return <EditSubtitles database={database} id={adminId} />;
           } else return  <PageNotFound />            
         } else {
 

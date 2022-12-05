@@ -5,10 +5,14 @@ import { AspectRatio, Container, Image, Alert, Text, MantineProvider, Paper } fr
 import { VRMasset } from './VRMassets';
 
 
-export function MainScene(isEnd: any) {
+interface Props {
+  isEnd: boolean
+}
+
+export function MainScene({isEnd}: Props) {
   
   const stage = useGLTF("./stage.glb");
-  const screen = useGLTF("./screen.glb");
+  const screen = useGLTF("screen.glb");
 
   return (
     <>

@@ -43,17 +43,22 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
+interface Props {
+  database: any,
+  id: string
+}
 
-export function EditSubtitles(database: any) {
+export function EditSubtitles({database, id}: Props) {
+  console.log(id);
   const form = useForm({
     initialValues: {
-      subtitles: database.database
+      subtitles: database
     },
   });
 
   const old_form = useForm({
     initialValues: {
-      subtitles: database.database
+      subtitles: database
     },
   });
 
